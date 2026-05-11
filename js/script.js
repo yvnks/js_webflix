@@ -37,7 +37,7 @@ function hightlightActiveLink() {
 async function renderPopularMovies() {
   let html = "";
   const { results } = await fetchDataFromAPI("movie/popular");
-  console.log(results)
+  console.log(results);
 
   results.forEach((movie) => {
     html += `
@@ -63,7 +63,7 @@ async function renderPopularMovies() {
     `;
   });
   document.querySelector("#popular-movies").innerHTML = html;
-  console.log(html)
+  console.log(html);
 }
 
 /**
@@ -71,6 +71,7 @@ async function renderPopularMovies() {
  * from the API.
  */
 async function fetchDataFromAPI(endpoint) {
+  showSpinner();
   const API_URL = "https://api.themoviedb.org/3/";
   const API_KEY = "bc2f421c810659588237b20b4fce4f00";
 
@@ -79,6 +80,13 @@ async function fetchDataFromAPI(endpoint) {
   );
 
   const data = response.json();
-
+  hideSpinner();
   return data;
+}
+
+function showSpinner() {
+  document.querySelector(".js-spinner").classList.add("show");
+}
+function hideSpinner() {
+  document.querySelector(".js-spinner").classList.remove("show");
 }
