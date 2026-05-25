@@ -341,15 +341,70 @@ async function search() {
   global.search.term = URL.get("search-term");
 
   if (global.search.term !== "" && global.search.term !== null) {
-    const results = await search_api_data();
+    const { results, total_pages, page_number } = await search_api_data();
     console.log(results);
+
+    if (results.length === 0) {
+      show_alert("No results found");
+      return;
+    }
+
+    display_search_results(results);
+    document.querySelector("#search-term").value = "";
   } else {
-    show_alert("Please enter a search term");
+    show_alert("Please enter a search term", "alert-error");
   }
 }
 
+/**
+ * display search results
+ */
+function display_search_results(results) {
+  let html = "";
+  results.forEach((result) => {
+    html += `
+    <div class="card">
+          <a href="${global.search.type}-details.html?id=${result.id}">
+            ${
+              result.poster_path
+                ? `<img src="https://tmdb.org/t/p/w500${result.poster_path}" 
+                    class="card-img-top" 
+                    alt="${
+                      global.search.type === "movie"
+                        ? result.title
+                        : result.name
+                    }"
+                 />`
+                : `<img src="images/no-image.jpg" 
+                    class="card-img-top" alt="${
+                      global.search.type === "movie"
+                        ? result.title
+                        : result.name
+                    }"
+                  />`
+            }
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">${
+              global.search.type === "movie" ? result.title : result.name
+            }</h5>
+            <p class="card-text">
+              <small class="text-muted">Release: ${
+                global.search.type === "movie"
+                  ? result.release_date
+                  : result.first_air_date
+              }</small>
+            </p>
+          </div>
+    </div>
+    `;
+
+    document.querySelector("#search-results").innerHTML = html;
+  });
+}
+
 // Show alert
-function show_alert(msg, class_name) {
+function show_alert(msg, class_name = "alert-error") {
   const alert_element = document.createElement("div");
 
   alert_element.classList.add("alert", class_name);
