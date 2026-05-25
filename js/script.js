@@ -1,5 +1,13 @@
 const global = {
   location: window.location.pathname,
+  search: {
+    term: "",
+    type: "",
+    pagination: 1,
+    total_pages: 1,
+  },
+  api_url: "https://api.themoviedb.org/3/",
+  api_key: "bc2f421c810659588237b20b4fce4f00",
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
       displayMovieDetails();
       break;
     case "/search.html":
+      search();
       console.log("Search");
       break;
     case "/tv-details.html":
@@ -77,11 +86,25 @@ async function renderPopularMovies() {
  */
 async function fetchDataFromAPI(endpoint) {
   showSpinner();
-  const API_URL = "https://api.themoviedb.org/3/";
-  const API_KEY = "bc2f421c810659588237b20b4fce4f00";
+  const API_URL = global.api_url;
+  const API_KEY = global.api_key;
 
   const response = await fetch(
     `${API_URL}${endpoint}?api_key=${API_KEY}&language=en-US`,
+  );
+
+  const data = await response.json();
+  hideSpinner();
+  return data;
+}
+
+async function search_api_data(endpoint) {
+  showSpinner();
+  const API_URL = global.api_url;
+  const API_KEY = global.api_key;
+
+  const response = await fetch(
+    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`,
   );
 
   const data = await response.json();
@@ -274,7 +297,7 @@ async function displaySlider() {
               <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" />
             </a>
             <h4 class="swiper-rating">
-              <i class="fas fa-star text-secondary"></i> ${movie.vote_average} / 10
+              <i class="fas fa-star text-secondary"></i> ${movie.vote_average.toFixed(1)} / 10
             </h4>
           </div> 
     `;
@@ -305,4 +328,36 @@ function initSwiper() {
       },
     },
   });
+}
+
+/**
+ * search movies / shows
+ */
+async function search() {
+  const queryStr = window.location.search;
+  const URL = new URLSearchParams(queryStr);
+
+  global.search.type = URL.get("type");
+  global.search.term = URL.get("search-term");
+
+  if (global.search.term !== "" && global.search.term !== null) {
+    const results = await search_api_data();
+    console.log(results);
+  } else {
+    show_alert("Please enter a search term");
+  }
+}
+
+// Show alert
+function show_alert(msg, class_name) {
+  const alert_element = document.createElement("div");
+
+  alert_element.classList.add("alert", class_name);
+  alert_element.appendChild(document.createTextNode(msg));
+
+  document.querySelector("#alert").appendChild(alert_element);
+
+  setTimeout(() => {
+    alert_element.remove();
+  }, 1500);
 }
