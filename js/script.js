@@ -3,6 +3,7 @@ const global = {
   search: {
     term: "",
     type: "",
+    page: 1,
     pagination: 1,
     total_pages: 1,
   },
@@ -104,7 +105,7 @@ async function search_api_data(endpoint) {
   const API_KEY = global.api_key;
 
   const response = await fetch(
-    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`,
+    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}&page=${global.search.page}`,
   );
 
   const data = await response.json();
@@ -341,8 +342,12 @@ async function search() {
   global.search.term = URL.get("search-term");
 
   if (global.search.term !== "" && global.search.term !== null) {
-    const { results, total_pages, page_number } = await search_api_data();
-    console.log(results);
+    const { results, total_pages, page, total_results } =
+      await search_api_data();
+
+    global.search.page = page;
+    global.search.total_pages = total_pages;
+    global.search.total_results = total_results;
 
     if (results.length === 0) {
       show_alert("No results found");
@@ -360,6 +365,11 @@ async function search() {
  * display search results
  */
 function display_search_results(results) {
+  // Clear prev results if exists.
+  document.querySelector("#search-results").innerHTML = "";
+  document.querySelector("#search-results-heading").innerHTML = "";
+  document.querySelector("#pagination").innerHTML = "";
+
   let html = "";
   results.forEach((result) => {
     html += `
@@ -399,7 +409,58 @@ function display_search_results(results) {
     </div>
     `;
 
+    document.querySelector("#search-results-heading").innerHTML =
+      `<h2>${results.length} of ${global.search.total_results} for ${global.search.term}</h2>`;
+
     document.querySelector("#search-results").innerHTML = html;
+  });
+  display_pagination();
+}
+
+/**
+ * Create and display pagination for search
+ */
+
+function display_pagination() {
+  const div = document.createElement("div");
+  div.classList.add("pagination");
+  div.innerHTML = `
+    <button class="btn btn-primary" id="prev">Prev</button>
+          <button class="btn btn-primary" id="next">Next</button>
+          <div class="page-counter">${global.search.page} 
+            of ${global.search.total_pages}
+          </div>`;
+
+  document.querySelector("#pagination").appendChild(div);
+
+  // Disable prev button if on first page.
+  if (global.search.page === 1) {
+    document.querySelector("#prev").disabled = true;
+  } else {
+    document.querySelector("#prev").disabled = false;
+
+  }
+
+  // Disable next button if on last page.
+  if (global.search.page === global.search.total_pages) {
+    document.querySelector("#next").disabled = true;
+  } 
+
+
+  // Next page.
+  document.querySelector("#next").addEventListener("click", async () => {
+    global.search.page++;
+
+    const { results, total_pages } = await search_api_data();
+    display_search_results(results);
+  });
+
+  // Prev page.
+  document.querySelector("#prev").addEventListener("click", async () => {
+    global.search.page--;
+
+    const { results, total_pages } = await search_api_data();
+    display_search_results(results);
   });
 }
 
